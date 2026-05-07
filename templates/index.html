@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NFIRS Assistant — Free voice→draft for fire-department reports</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Speak (or type) a 30-second after-call narrative; get a structured NFIRS-1 (Basic Module) draft with the right NFIRS-5 codes pre-filled. Free for fire departments. No accounts, no PHI, no upsell.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://nfirs.freshskyai.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NFIRS Assistant — Free voice→draft for fire-department reports">
+  <meta property="og:description" content="Speak (or type) a 30-second after-call narrative; get a structured NFIRS-1 draft with the right NFIRS-5 codes pre-filled. Free for fire departments.">
+  <meta property="og:url" content="https://nfirs.freshskyai.com/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🚒%3C/text%3E%3C/svg%3E">
+  <style>
+    :root {
+      --fg:#0f172a; --bg:#fafaf9; --card:#fff; --accent:#b91c1c; --accent-hover:#991b1b;
+      --border:#e7e5e4; --muted:#57534e; --good:#15803d; --warn:#b45309;
+    }
+    * { box-sizing:border-box; }
+    body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--fg); margin:0; padding:0; line-height:1.55; }
+    .topbar { background:#1c1917; color:#f5f5f4; padding:12px 18px; display:flex; justify-content:space-between; align-items:center; font-size:14px; border-bottom:3px solid var(--accent); }
+    .topbar a { color:#fbbf24; text-decoration:none; font-weight:600; }
+    .topbar a:hover { text-decoration:underline; }
+    header { text-align:center; padding:36px 20px 20px; }
+    header h1 { margin:0; font-size:30px; letter-spacing:-0.01em; }
+    header .tag { display:inline-block; background:#fef2f2; color:var(--accent); font-size:12px; font-weight:700; padding:4px 10px; border-radius:99px; margin-bottom:10px; letter-spacing:0.05em; text-transform:uppercase; }
+    header p { color:var(--muted); max-width:680px; margin:14px auto 0; font-size:16px; }
+    main { max-width:780px; margin:0 auto; padding:14px 16px 80px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:24px; margin-bottom:18px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+    .card h2 { margin:0 0 6px; font-size:19px; }
+    .card .sub { font-size:13.5px; color:var(--muted); margin-bottom:16px; }
+    label { display:block; font-weight:600; margin-bottom:8px; font-size:14px; }
+    textarea { width:100%; min-height:140px; padding:12px; border:1px solid var(--border); border-radius:10px; font:inherit; font-size:15px; resize:vertical; background:#fff; }
+    textarea:focus { outline:2px solid var(--accent); border-color:var(--accent); }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    button { font:inherit; cursor:pointer; border-radius:10px; padding:11px 18px; font-weight:600; border:none; }
+    button.primary { background:var(--accent); color:#fff; padding:13px 22px; font-size:15px; }
+    button.primary:hover { background:var(--accent-hover); }
+    button.primary:disabled { opacity:.55; cursor:not-allowed; }
+    button.ghost { background:#fff; color:var(--fg); border:1px solid var(--border); }
+    button.ghost:hover { background:#fafaf9; }
+    button.mic { background:#fef2f2; color:var(--accent); border:1px solid #fecaca; }
+    button.mic.recording { background:var(--accent); color:#fff; animation:pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(185,28,28,0.5); } 50% { box-shadow:0 0 0 10px rgba(185,28,28,0); } }
+    .hint { font-size:12.5px; color:var(--muted); margin-top:8px; }
+    .error { color:#991b1b; background:#fef2f2; padding:12px; border-radius:8px; margin-top:12px; display:none; border:1px solid #fecaca; }
+    .error.shown { display:block; }
+    .spin { display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:s 0.8s linear infinite; margin-right:8px; vertical-align:-2px; }
+    @keyframes s { to { transform:rotate(360deg); } }
+
+    /* Output card */
+    #out { display:none; }
+    #out.shown { display:block; }
+    .draft-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; }
+    @media (max-width:560px) { .draft-grid { grid-template-columns:1fr; } }
+    .field { background:#fafaf9; border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+    .field label { font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; font-weight:700; }
+    .field .val { font-size:15px; font-weight:500; word-break:break-word; }
+    .field .val.muted { color:#a8a29e; font-style:italic; }
+    .field .code-pill { display:inline-block; background:#1c1917; color:#fbbf24; font-size:12px; padding:2px 8px; border-radius:5px; font-family:'SF Mono',ui-monospace,Menlo,monospace; margin-right:6px; }
+    .field .copy { float:right; font-size:11px; padding:3px 8px; cursor:pointer; background:#fff; border:1px solid var(--border); border-radius:5px; color:var(--muted); }
+    .field .copy:hover { background:#f5f5f4; }
+    .field .copy.copied { background:var(--good); color:#fff; border-color:var(--good); }
+    .full { grid-column:1/-1; }
+    .narrative { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:14px; margin-top:14px; line-height:1.6; }
+    .narrative h4 { margin:0 0 6px; font-size:13px; text-transform:uppercase; color:var(--warn); letter-spacing:0.05em; }
+    .review-flag { background:#fff7ed; border:1px solid #fed7aa; padding:10px 12px; border-radius:8px; margin-top:14px; font-size:13.5px; color:#9a3412; }
+    .review-flag strong { display:block; margin-bottom:4px; }
+
+    /* Disclaimer */
+    .disclaimer { font-size:13px; color:var(--muted); padding:18px; max-width:680px; margin:8px auto; text-align:center; line-height:1.55; }
+    .disclaimer strong { color:var(--accent); }
+
+    /* Footer */
+    footer { border-top:1px solid var(--border); margin-top:40px; padding:24px 20px; text-align:center; font-size:12.5px; color:var(--muted); line-height:1.7; }
+    footer a { color:#57534e; text-decoration:underline; }
+
+    /* Print */
+    @media print {
+      .topbar, .input-card, footer, .disclaimer-bar, button, .copy { display:none !important; }
+      body { background:#fff; }
+      #out { display:block !important; box-shadow:none; border:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <span><strong>🚒 NFIRS Assistant</strong> &middot; Free for fire departments</span>
+    <a href="https://firstresponder.freshskyai.com/" target="_blank" rel="noopener">More tools →</a>
+  </div>
+
+  <header>
+    <span class="tag">NFIRS-5 · Basic Module · Draft Generator</span>
+    <h1>Speak the call. Get the draft.</h1>
+    <p>Tap the mic, speak ~30 seconds about what happened on the call, review the structured NFIRS-1 draft with codes pre-filled, paste it into your existing NFIRS-5 entry tool. Built by a fire-service volunteer + software engineer. No PHI. No accounts. No upsell. Free.</p>
+  </header>
+
+  <main>
+    <div class="card input-card">
+      <h2>1. Describe the call</h2>
+      <p class="sub">Voice or typed. Mention what you remember: address, time, what you found on arrival, what you did, who was hurt (if anyone), what caused it. The draft fills in the rest.</p>
+
+      <div class="row">
+        <button class="mic" id="micBtn" type="button" aria-label="Record voice">🎙️ <span id="micLabel">Tap to speak</span></button>
+        <button class="ghost" id="sampleBtn" type="button">Try a sample</button>
+        <button class="ghost" id="clearBtn" type="button">Clear</button>
+      </div>
+
+      <div style="margin-top:14px;">
+        <label for="narrative">Narrative</label>
+        <textarea id="narrative" placeholder="Example: Dispatched 23:47 on 2026-05-06 for working kitchen fire at 12 Maple Drive, Somerset NJ. Engine 41 first on scene with 4. Smoke showing rear of single-family. 1.75&quot; line, primary search negative. Fire out in 8 min. Cause: unattended cooking. No injuries. Estimated $4,500 damage to kitchen contents."></textarea>
+        <div class="hint">⌘/Ctrl + Enter to submit · max 4000 chars</div>
+      </div>
+
+      <div class="row" style="margin-top:18px;">
+        <button class="primary" id="submitBtn" type="button">Generate NFIRS-1 draft</button>
+        <span class="hint" id="submitStatus" style="display:none;"></span>
+      </div>
+
+      <div class="error" id="err"></div>
+    </div>
+
+    <div class="card" id="out" aria-live="polite">
+      <h2>2. Draft NFIRS-1 — review before filing</h2>
+      <p class="sub">Hover any field to copy the value. <button class="ghost" type="button" onclick="window.print()" style="font-size:12.5px;padding:5px 12px;margin-left:6px;">🖨 Print</button></p>
+      <div id="draftBody"></div>
+    </div>
+  </main>
+
+  <div class="disclaimer">
+    <strong>This is a DRAFT.</strong> The human filer is responsible for accuracy before NFIRS submission.
+    The app does not retain narrative input or output. No PHI, no PII, no patient-care data should be entered.
+  </div>
+
+  <footer>
+    <p>Built under the <a href="https://www.freshskyai.com/#hulec" target="_blank" rel="noopener">HULEC rule</a> — Human-centered · Unique · Legal · Efficient · Cheap. Part of <a href="https://firstresponder.freshskyai.com/" target="_blank" rel="noopener">Fresh Sky AI for First Responders</a> · Free, volunteer-built, no contract.</p>
+    <p>NFIRS-5.0 reference codes are public domain via the U.S. Fire Administration. This tool is not affiliated with USFA, FEMA, or any state fire marshal.</p>
+  </footer>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const narrative = $('narrative');
+  const submitBtn = $('submitBtn');
+  const submitStatus = $('submitStatus');
+  const err = $('err');
+  const out = $('out');
+  const draftBody = $('draftBody');
+  const micBtn = $('micBtn');
+  const micLabel = $('micLabel');
+
+  // ----- Sample narrative -----
+  const SAMPLE = `Dispatched 23:47 on 2026-05-06 for working kitchen fire at 12 Maple Drive, Somerset NJ. Engine 41 first on scene at 23:53 with 4 personnel. Light smoke showing rear of single-family two-story dwelling. Pulled 1.75" attack line, made entry through front door. Fire confined to kitchen, knocked down at 23:58. Primary search negative on both floors. Cause: unattended cooking, oil ignition on stovetop. No injuries to civilians or firefighters. Loss to property approximately $2,000, contents approximately $4,500. Last unit cleared 00:42.`;
+  $('sampleBtn').onclick = () => { narrative.value = SAMPLE; narrative.focus(); };
+  $('clearBtn').onclick = () => { narrative.value = ''; out.classList.remove('shown'); err.classList.remove('shown'); narrative.focus(); };
+
+  // ----- Web Speech API for voice input -----
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognizer = null;
+  let recording = false;
+
+  if (!SR) {
+    micBtn.disabled = true;
+    micBtn.title = 'Voice input not supported in this browser. Try Chrome, Edge, or Safari.';
+    micBtn.style.opacity = '0.55';
+    micBtn.style.cursor = 'not-allowed';
+  } else {
+    micBtn.onclick = () => {
+      if (recording) {
+        recognizer && recognizer.stop();
+        return;
+      }
+      recognizer = new SR();
+      recognizer.lang = 'en-US';
+      recognizer.continuous = true;
+      recognizer.interimResults = true;
+
+      let finalTranscript = narrative.value ? narrative.value.trimEnd() + ' ' : '';
+      recognizer.onresult = (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalTranscript += t + ' ';
+          else interim += t;
+        }
+        narrative.value = (finalTranscript + interim).trimStart();
+      };
+      recognizer.onend = () => {
+        recording = false;
+        micBtn.classList.remove('recording');
+        micLabel.textContent = 'Tap to speak';
+      };
+      recognizer.onerror = (e) => {
+        recording = false;
+        micBtn.classList.remove('recording');
+        micLabel.textContent = 'Tap to speak';
+        if (e.error === 'not-allowed') showErr('Microphone permission denied. Allow mic access in your browser.');
+        else if (e.error !== 'no-speech' && e.error !== 'aborted') showErr('Voice input error: ' + e.error);
+      };
+      recording = true;
+      micBtn.classList.add('recording');
+      micLabel.textContent = 'Listening… tap to stop';
+      recognizer.start();
+    };
+  }
+
+  // ----- Submit -----
+  function showErr(msg) { err.textContent = msg; err.classList.add('shown'); }
+  function clearErr() { err.classList.remove('shown'); }
+
+  async function submit() {
+    const text = (narrative.value || '').trim();
+    if (!text) { showErr('Describe the call first.'); return; }
+    clearErr();
+    out.classList.remove('shown');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spin"></span>Generating draft…';
+    submitStatus.textContent = 'Querying AI provider chain…';
+    submitStatus.style.display = 'inline';
+    try {
+      const r = await fetch('/api/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ narrative: text }),
+      });
+      const j = await r.json();
+      if (!r.ok) { showErr(j.error || 'Server error.'); return; }
+      renderDraft(j.draft || {});
+      out.classList.add('shown');
+      out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      showErr('Network error: ' + (e.message || e));
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Generate NFIRS-1 draft';
+      submitStatus.style.display = 'none';
+    }
+  }
+
+  submitBtn.onclick = submit;
+  narrative.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submit(); }
+  });
+
+  // ----- Render -----
+  function field(label, value, isCode) {
+    const v = value == null || value === '' ? null : value;
+    const display = v == null
+      ? '<span class="val muted">—</span>'
+      : (isCode ? `<span class="val"><span class="code-pill">${escapeHtml(isCode)}</span>${escapeHtml(v)}</span>` : `<span class="val">${escapeHtml(String(v))}</span>`);
+    const copyVal = isCode ? `${isCode} — ${v}` : (v == null ? '' : String(v));
+    return `<div class="field">
+      ${v != null ? `<button class="copy" data-copy="${escapeAttr(copyVal)}">Copy</button>` : ''}
+      <label>${escapeHtml(label)}</label>
+      ${display}
+    </div>`;
+  }
+
+  function renderDraft(d) {
+    const actions = (d.actions_taken || []).map(a => `<span class="code-pill">${escapeHtml(a.code || '')}</span>${escapeHtml(a.label || '')}`).join('<br>') || '<span class="val muted">—</span>';
+    const apparatus = (d.apparatus || []).map(a => `${escapeHtml(a.unit || '')} (${a.personnel_count ?? '?'} personnel)`).join('<br>') || '<span class="val muted">—</span>';
+    const c = d.casualties || {};
+    const cas = `Fire fatalities: ${c.fire_fatalities ?? 0} · Fire injuries: ${c.fire_injuries ?? 0} · Civilian fatalities: ${c.civilian_fatalities ?? 0} · Civilian injuries: ${c.civilian_injuries ?? 0}`;
+    const loss = (d.estimated_property_loss_usd != null || d.estimated_contents_loss_usd != null)
+      ? `Property: $${d.estimated_property_loss_usd ?? '—'} · Contents: $${d.estimated_contents_loss_usd ?? '—'}`
+      : null;
+
+    const html = `
+      <div class="draft-grid">
+        ${field('Incident date', d.incident_date)}
+        ${field('Alarm time', d.alarm_time)}
+        ${field('Arrival time', d.arrival_time)}
+        ${field('Controlled time', d.controlled_time)}
+        ${field('Last unit cleared', d.last_unit_cleared_time)}
+        ${field('Aid given/received', d.aid_given_received)}
+        <div class="field full">
+          <button class="copy" data-copy="${escapeAttr([d.incident_address, d.city, d.state, d.zip].filter(Boolean).join(', '))}">Copy</button>
+          <label>Address</label>
+          <span class="val">${escapeHtml([d.incident_address, d.city, d.state, d.zip].filter(Boolean).join(', ') || '—')}</span>
+        </div>
+        ${field('Incident type', d.incident_type_label, d.incident_type_code)}
+        ${field('Property use', d.property_use_label, d.property_use_code)}
+        <div class="field full">
+          <label>Actions taken (up to 3)</label>
+          <span class="val">${actions}</span>
+        </div>
+        <div class="field full">
+          <label>Apparatus</label>
+          <span class="val">${apparatus}</span>
+        </div>
+        ${field('Personnel total', d.personnel_total)}
+        ${field('Cause of ignition', d.cause_of_ignition_label, d.cause_of_ignition_code)}
+        <div class="field full">
+          <label>Casualties</label>
+          <span class="val">${escapeHtml(cas)}</span>
+        </div>
+        ${loss ? `<div class="field full"><label>Estimated loss</label><span class="val">${escapeHtml(loss)}</span></div>` : ''}
+      </div>
+      <div class="narrative">
+        <h4>📝 Cleaned narrative for the report</h4>
+        <button class="copy" data-copy="${escapeAttr(d.narrative_cleaned || '')}" style="float:right;font-size:11px;">Copy narrative</button>
+        ${escapeHtml(d.narrative_cleaned || '—')}
+      </div>
+      ${(d.fields_needing_review || []).length ? `
+        <div class="review-flag">
+          <strong>⚠ Fields needing review</strong>
+          The model marked these as missing or guessed: ${(d.fields_needing_review).map(escapeHtml).join(', ')}.
+        </div>` : ''}
+    `;
+    draftBody.innerHTML = html;
+
+    // Wire up copy buttons
+    draftBody.querySelectorAll('.copy').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const v = btn.getAttribute('data-copy') || '';
+        try { await navigator.clipboard.writeText(v); } catch (_) {}
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1200);
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+})();
+</script>
+</body>
+</html>
