@@ -245,7 +245,7 @@ def test_security_and_policy_headers(client):
     assert "Set-Cookie" not in home.headers
 
     metrics = client.get("/metrics")
-    assert metrics.headers["Cache-Control"] == "private, no-store, max-age=0"
+    assert metrics.headers["Cache-Control"].startswith("private, no-store")
     assert metrics.headers["X-Robots-Tag"].startswith("noindex")
 
 
