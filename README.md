@@ -1,6 +1,6 @@
 # NERIS Preparation Assistant
 
-An experimental, free FreshSkyAI tool that organizes a **de-identified** after-call narrative into a concise review aid before an authorized human completes the department's NERIS or RMS workflow.
+An experimental, paid FreshSkyAI tool that organizes a **de-identified** after-call narrative into a concise review aid before an authorized human completes the department's NERIS or RMS workflow.
 
 Live URL: <https://nfirs.freshskyai.com>
 
@@ -74,4 +74,4 @@ python3 -m pip install -r requirements-dev.txt
 python3 -m pytest -q
 ```
 
-Built by Fresh Sky LLC as a free civic-service experiment. It is not affiliated with USFA, FEMA, NERIS, or any state fire agency.
+Built by Fresh Sky LLC as a privacy-first civic-service experiment. It is not affiliated with USFA, FEMA, NERIS, or any state fire agency.

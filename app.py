@@ -29,6 +29,9 @@ from flask import Response, Flask, jsonify, render_template, request
 from freshsky_common.llm import LLMChain, install_provider_metrics
 from freshsky_common.privacy import SensitiveDataError, detect_sensitive_data
 from freshsky_common.rate_limit import register_global_rate_limits
+from freshsky_common.freemium import register_freemium
+from freshsky_common.hulec import install_hulec
+from freshsky_common.security import install_security_headers
 from werkzeug.exceptions import RequestEntityTooLarge
 
 
@@ -45,6 +48,14 @@ app.config.update(
 
 from freshsky_common.revenue import install_visuals  # noqa: E402
 install_visuals(app)
+register_freemium(
+    app,
+    primary_url=os.environ.get('APP_URL', 'https://nfirs.freshskyai.com'),
+    community_mode=True,
+    gate_all_post=True,
+)
+install_hulec(app, slug='nfirs')
+install_security_headers(app)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("neris_preparation")
@@ -153,7 +164,7 @@ def _security_headers(response):
     return response
 
 
-# Bound anonymous AI use while preserving free access and min-instances=0.
+# Bound anonymous AI use while enforcing preview and subscription access and min-instances=0.
 # This is a lightweight process-local first layer; Cloud Run instance and
 # provider-budget limits remain the portfolio-wide hard controls.
 register_global_rate_limits(app, ip_per_hour=20, user_per_day=100)
@@ -496,7 +507,7 @@ _PRIVACY_HTML = f"""<!DOCTYPE html>
 <h2>Use de-identified input only</h2>
 <p>Do not enter exact addresses, names, phone numbers, email addresses, incident or case numbers, patient information, medical details, or sensitive operational information. Add required identifiers only inside your department's authorized NERIS or RMS system.</p>
 <h2>What we process</h2>
-<p>The de-identified narrative you submit is sent to FreshSkyAI's privacy-restricted AI provider chain to create the review aid. A pre-provider filter rejects likely personal identifiers. The app has no account requirement and does not save narratives or results to an application database.</p>
+<p>The de-identified narrative you submit is sent to FreshSkyAI's privacy-restricted AI provider chain to create the review aid. A pre-provider filter rejects likely personal identifiers. The app uses a minimal email-based subscription record and does not save narratives or results to an application database.</p>
 <h2>Optional browser voice recognition</h2>
 <p>If you use the microphone button, speech recognition is provided by your browser and may use the browser vendor's speech service. FreshSkyAI receives the resulting transcript, not the microphone audio. Use typed input if department policy does not permit browser speech processing.</p>
 <h2>Operational logs</h2>
@@ -519,7 +530,7 @@ _TERMS_HTML = f"""<!DOCTYPE html>
 <h1>Terms of Use — NERIS Preparation Assistant</h1>
 <p><em>Last updated 2026-07-16</em></p>
 <h2>Experimental preparation aid</h2>
-<p>This free tool organizes a de-identified after-call narrative for human review. It is not a NERIS form, schema mapping, import file, compliance check, filing service, or official incident report.</p>
+<p>This paid tool organizes a de-identified after-call narrative for human review. It is not a NERIS form, schema mapping, import file, compliance check, filing service, or official incident report.</p>
 <h2>NFIRS is retired</h2>
 <p>The tool does not generate NFIRS reports or codes. USFA states that calendar-year 2026 incident submission is exclusively in NERIS, NFIRS edits ended January 31, 2026, and NFIRS became unavailable in February 2026. See the <a href="{USFA_NFIRS_SUNSET_URL}">official transition notice</a>.</p>
 <h2>Human verification required</h2>
