@@ -72,7 +72,7 @@ def test_civic_access_and_sensitive_data_boundaries_are_explicit(client):
         assert phrase in html
     assert "subscription_tier='civic'" in app_source
     assert "workspace_id='civic'" in app_source
-    assert "05fe2d0a11fd81ee82f16f6270fc061b0fc15b37" in requirements
+    assert "e131ce07f32bd209be150999afac800c4c243eb4" in requirements
     assert "FRESHSKY_WORKSPACE_ID=civic" in workflow
 
 
