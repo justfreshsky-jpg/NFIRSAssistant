@@ -1,11 +1,15 @@
 import json
 import logging
 import re
+from pathlib import Path
 
 import pytest
 from freshsky_common.privacy import detect_sensitive_data
 
 import app as application
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 VALID_PREPARATION = {
@@ -39,7 +43,7 @@ def test_home_explains_transition_and_sample_is_deidentified(client):
     response = client.get("/")
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "NFIRS is retired" in html
+    assert "NFIRS is decommissioned" in html
     assert "Calendar-year 2026 incident submission is exclusively in NERIS" in html
     assert "Generate NFIRS-1" not in html
     assert "codes pre-filled" not in html
@@ -47,6 +51,29 @@ def test_home_explains_transition_and_sample_is_deidentified(client):
     sample_match = re.search(r"const SAMPLE = `([^`]*)`;", html)
     assert sample_match
     assert detect_sensitive_data(sample_match.group(1)) == []
+
+
+def test_civic_access_and_sensitive_data_boundaries_are_explicit(client):
+    html = client.get("/").get_data(as_text=True)
+    app_source = (ROOT / "app.py").read_text()
+    requirements = (ROOT / "requirements.txt").read_text()
+    workflow = (ROOT / ".github/workflows/deploy.yml").read_text()
+    assert "$14.99/month" in html
+    assert "40 usage units/day" in html
+    assert "200/month" in html
+    assert "does not unlock non-Civic products" in html
+    for phrase in (
+        "rosters",
+        "CAPIDs",
+        "PHI",
+        "incident or case identifiers",
+        "operational secrets",
+    ):
+        assert phrase in html
+    assert "subscription_tier='civic'" in app_source
+    assert "workspace_id='civic'" in app_source
+    assert "05fe2d0a11fd81ee82f16f6270fc061b0fc15b37" in requirements
+    assert "FRESHSKY_WORKSPACE_ID=civic" in workflow
 
 
 def test_health_reports_nfirs_generation_disabled(client):
@@ -252,7 +279,7 @@ def test_security_and_policy_headers(client):
 def test_privacy_and_terms_match_current_product(client):
     privacy = client.get("/privacy").get_data(as_text=True)
     terms = client.get("/terms").get_data(as_text=True)
-    assert "Last updated 2026-07-16" in privacy
+    assert "Last updated 2026-07-26" in privacy
     assert "never submitted narratives or model output" in privacy
     assert "does not generate NFIRS reports or codes" in terms
     assert application.USFA_NFIRS_SUNSET_URL in terms

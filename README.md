@@ -4,11 +4,13 @@ An experimental, paid FreshSkyAI tool that organizes a **de-identified** after-c
 
 Live URL: <https://nfirs.freshskyai.com>
 
-The repository and existing subdomain retain their historical `NFIRSAssistant` names, but NFIRS draft generation is disabled.
+The repository and existing subdomain retain their historical `NFIRSAssistant` names. NFIRS is decommissioned, NFIRS draft generation is disabled, and this app is a NERIS preparation aid only.
+
+Access includes three previews, then Civic costs $14.99/month with up to 40 usage units per day and 200 per month. Civic covers CivicOps only and does not unlock non-Civic products. Existing subscribers with an eligible broader entitlement remain supported.
 
 ## Why the app changed
 
-The U.S. Fire Administration states that:
+The U.S. Fire Administration states that (verified July 26, 2026):
 
 - Calendar-year 2026 incident submission is exclusively in NERIS.
 - January 31, 2026 was the final date to edit calendar-year 2025 NFIRS incidents.
@@ -42,9 +44,9 @@ Voice recognition is browser-provided and may use the browser vendor's speech se
 - Assign NERIS codes or controlled-vocabulary values.
 - Claim NERIS schema compliance or readiness to file.
 - Import, submit, or connect to NERIS, CAD, or RMS.
-- Ask users to enter exact addresses, names, phone numbers, emails, account/case/incident numbers, PHI, patient-care details, or sensitive operational information. Common identifier and patient-care patterns are rejected before a provider call.
+- Ask users to enter rosters, CAPIDs, exact addresses, names, phone numbers, emails, account/case/incident identifiers, PHI, patient-care details, or operational secrets. Common identifier and patient-care patterns are rejected before a provider call.
 - Store narratives or results in an application database.
-- Require an account, payment, contract, or manual FreshSkyAI involvement.
+- Require an account for the three previews. Continued use requires an eligible monthly subscription authenticated with a verified email; no long-term contract or manual FreshSkyAI involvement is required.
 
 Exact identifiers and any authorized patient-care information belong only in the department's authorized system.
 

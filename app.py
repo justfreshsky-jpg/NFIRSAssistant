@@ -1,6 +1,6 @@
 """FreshSkyAI NERIS Preparation Assistant.
 
-The legacy NFIRS drafting feature is retired. Starting January 1, 2026,
+The legacy NFIRS drafting feature is decommissioned. Starting January 1, 2026,
 calendar-year 2026 incident submission is exclusively in NERIS, and NFIRS
 became unavailable in February 2026. This app now turns a de-identified
 after-call narrative into a plain-language review aid for a human completing
@@ -53,6 +53,9 @@ register_freemium(
     primary_url=os.environ.get('APP_URL', 'https://nfirs.freshskyai.com'),
     community_mode=True,
     gate_all_post=True,
+    subscription_tier='civic',
+    subscription_amount_cents=1499,
+    workspace_id='civic',
 )
 install_hulec(app, slug='nfirs')
 install_security_headers(app)
@@ -420,7 +423,7 @@ def retired_nfirs_draft():
     return (
         jsonify(
             error=(
-                "NFIRS draft generation is retired. Calendar-year 2026 incident "
+                "NFIRS draft generation is decommissioned. Calendar-year 2026 incident "
                 "submission is exclusively in NERIS. Use the de-identified "
                 "preparation endpoint instead."
             ),
@@ -503,9 +506,9 @@ _PRIVACY_HTML = f"""<!DOCTYPE html>
 </head><body>
 <a href="/">← Back to NERIS Preparation Assistant</a>
 <h1>Privacy Policy — NERIS Preparation Assistant</h1>
-<p><em>Last updated 2026-07-16</em></p>
+<p><em>Last updated 2026-07-26</em></p>
 <h2>Use de-identified input only</h2>
-<p>Do not enter exact addresses, names, phone numbers, email addresses, incident or case numbers, patient information, medical details, or sensitive operational information. Add required identifiers only inside your department's authorized NERIS or RMS system.</p>
+<p>Do not enter rosters, CAPIDs, exact addresses, names, phone numbers, email addresses, incident or case identifiers, PHI or patient information, medical details, or operational secrets. Add required protected details only inside your department's authorized NERIS or RMS system.</p>
 <h2>What we process</h2>
 <p>The de-identified narrative you submit is sent to FreshSkyAI's privacy-restricted AI provider chain to create the review aid. A pre-provider filter rejects likely personal identifiers. The app uses a minimal email-based subscription record and does not save narratives or results to an application database.</p>
 <h2>Optional browser voice recognition</h2>
@@ -528,15 +531,15 @@ _TERMS_HTML = f"""<!DOCTYPE html>
 </head><body>
 <a href="/">← Back to NERIS Preparation Assistant</a>
 <h1>Terms of Use — NERIS Preparation Assistant</h1>
-<p><em>Last updated 2026-07-16</em></p>
+<p><em>Last updated 2026-07-26</em></p>
 <h2>Experimental preparation aid</h2>
-<p>This paid tool organizes a de-identified after-call narrative for human review. It is not a NERIS form, schema mapping, import file, compliance check, filing service, or official incident report.</p>
-<h2>NFIRS is retired</h2>
+<p>This paid CivicOps tool organizes a de-identified after-call narrative for human review. It is not a NERIS form, schema mapping, import file, compliance check, filing service, or official incident report. Three previews are included; Civic costs $14.99/month with up to 40 usage units per day and 200 per month. Civic covers CivicOps only and does not unlock non-Civic workspaces. Existing subscribers with an eligible broader entitlement retain access.</p>
+<h2>NFIRS is decommissioned</h2>
 <p>The tool does not generate NFIRS reports or codes. USFA states that calendar-year 2026 incident submission is exclusively in NERIS, NFIRS edits ended January 31, 2026, and NFIRS became unavailable in February 2026. See the <a href="{USFA_NFIRS_SUNSET_URL}">official transition notice</a>.</p>
 <h2>Human verification required</h2>
 <p>AI output may be incomplete or wrong. An authorized human must verify every item against source records, the current NERIS or RMS interface, department policy, and applicable law before using it.</p>
 <h2>Prohibited input</h2>
-<p>Do not submit PII, PHI, patient-care information, exact addresses, incident identifiers, classified information, or sensitive operational details.</p>
+<p>Do not submit rosters, CAPIDs, PII, PHI or patient-care information, exact addresses, incident or case identifiers, classified information, or operational secrets.</p>
 <h2>No affiliation or warranty</h2>
 <p>FreshSkyAI is not affiliated with USFA, FEMA, NERIS, or any state fire agency. The tool is provided "as is" without warranty, and Fresh Sky LLC disclaims liability for use or misuse of its output.</p>
 <h2>Contact</h2>
