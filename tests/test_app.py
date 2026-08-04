@@ -30,17 +30,19 @@ VALID_PREPARATION = {
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    monkeypatch.setattr(application, "SOURCE_REVIEW_STATE", "approved")
     application.app.config.update(TESTING=True)
     return application.app.test_client()
 
 
-def test_home_explains_transition_and_sample_is_deidentified(client):
+def test_home_explains_source_hold_and_sample_is_deidentified(client):
     response = client.get("/")
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "NFIRS is retired" in html
-    assert "Calendar-year 2026 incident submission is exclusively in NERIS" in html
+    assert "Official-source review in progress" in html
+    assert "Preparation is temporarily unavailable" in html
+    assert "does not currently assert transition dates or reporting status" in html
     assert "Generate NFIRS-1" not in html
     assert "codes pre-filled" not in html
 
@@ -56,6 +58,8 @@ def test_health_reports_nfirs_generation_disabled(client):
         "status": "ok",
         "product": "neris-preparation",
         "nfirs_generation": "disabled",
+        "source_review": "approved",
+        "preparation_available": True,
     }
 
 
@@ -68,9 +72,42 @@ def test_retired_nfirs_endpoint_fails_closed_without_provider_call(client, monke
     assert response.status_code == 410
     body = response.get_json()
     assert body["replacement"] == "/api/prepare"
-    assert body["official_source"] == application.USFA_NFIRS_SUNSET_URL
+    assert body["official_sources"] == [
+        application.USFA_NERIS_URL,
+        application.USFA_NFIRS_ARCHIVE_URL,
+    ]
     assert response.headers["Cache-Control"] == "private, no-store, max-age=0"
     assert response.headers["X-Robots-Tag"].startswith("noindex")
+
+
+def test_pending_source_review_blocks_prepare_before_provider(
+    client,
+    monkeypatch,
+):
+    monkeypatch.setattr(application, "SOURCE_REVIEW_STATE", "changed_pending_review")
+    monkeypatch.setattr(
+        application,
+        "_llm",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("source hold must block the provider")
+        ),
+    )
+
+    response = client.post(
+        "/api/prepare",
+        json={"narrative": "De-identified fire response summary."},
+    )
+
+    assert response.status_code == 503
+    assert response.get_json() == {
+        "error": (
+            "Preparation is temporarily unavailable while changed official "
+            "NERIS and NFIRS sources receive substantive human review. No AI "
+            "provider was called."
+        ),
+        "code": "official_source_review_required",
+        "source_ids": ["usfa-neris", "usfa-nfirs-archive"],
+    }
 
 
 @pytest.mark.parametrize(
@@ -255,4 +292,5 @@ def test_privacy_and_terms_match_current_product(client):
     assert "Last updated 2026-07-16" in privacy
     assert "never submitted narratives or model output" in privacy
     assert "does not generate NFIRS reports or codes" in terms
-    assert application.USFA_NFIRS_SUNSET_URL in terms
+    assert "NERIS transition and NFIRS archive claims are temporarily withheld" in terms
+    assert application.USFA_NFIRS_ARCHIVE_URL in terms

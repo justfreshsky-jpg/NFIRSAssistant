@@ -149,7 +149,7 @@ a:hover{color:#c4b5fd}
 </head>
 <body>
   <div class="topbar">
-    <span><strong>🚒 NERIS Preparation Assistant</strong> &middot; Three previews · Advanced $29.99/month</span>
+    <span><strong>🚒 NERIS Preparation Assistant</strong> &middot; Three previews · Civic $14.99/month · No automatic overage charges</span>
     <a href="https://firstresponder.freshskyai.com/" target="_blank" rel="noopener">More tools →</a>
   </div>
 
@@ -161,10 +161,10 @@ a:hover{color:#c4b5fd}
 
   <main>
     <section class="card transition" aria-labelledby="transition-title">
-      <h2 id="transition-title">NFIRS is retired</h2>
-      <p><strong>Calendar-year 2026 incident submission is exclusively in NERIS.</strong> USFA says NFIRS edits ended January 31, 2026, and NFIRS became unavailable in February 2026.</p>
-      <p>This tool does not create NFIRS reports or codes. It also does not map the NERIS schema, import data, or submit an incident.</p>
-      <p class="sub"><a href="https://www.usfa.fema.gov/nfirs/sunset/" target="_blank" rel="noopener">Read the official USFA transition notice</a> · <a href="https://www.usfa.fema.gov/nfirs/neris/" target="_blank" rel="noopener">Open the official NERIS page</a></p>
+      <h2 id="transition-title">Official-source review in progress</h2>
+      <p><strong>Preparation is temporarily unavailable.</strong> The official USFA NERIS and NFIRS archive pages changed from their approved snapshots and require substantive human review.</p>
+      <p>This site does not currently assert transition dates or reporting status. Verify current requirements in your authorized NERIS or RMS workflow and through USFA.</p>
+      <p class="sub"><a href="https://www.usfa.fema.gov/neris/" target="_blank" rel="noopener">Open the current USFA NERIS page</a> · <a href="https://www.usfa.fema.gov/data-insights/nfirs/data/" target="_blank" rel="noopener">Open the NFIRS data archive page</a></p>
     </section>
 
     <div class="card input-card">
@@ -173,20 +173,20 @@ a:hover{color:#c4b5fd}
       <div class="privacy-note"><strong>Do not enter:</strong> exact addresses, names, phone numbers, email addresses, incident or case numbers, patient information, medical details, or sensitive operational information. Add required identifiers only inside your authorized NERIS or RMS system.</div>
 
       <div class="row">
-        <button class="mic" id="micBtn" type="button" aria-label="Record voice">🎙️ <span id="micLabel">Tap to speak</span></button>
-        <button class="ghost" id="sampleBtn" type="button">Try a sample</button>
-        <button class="ghost" id="clearBtn" type="button">Clear</button>
+        <button class="mic" id="micBtn" type="button" aria-label="Record voice" disabled>🎙️ <span id="micLabel">Review hold</span></button>
+        <button class="ghost" id="sampleBtn" type="button" disabled>Try a sample</button>
+        <button class="ghost" id="clearBtn" type="button" disabled>Clear</button>
       </div>
       <p class="hint">Voice recognition is provided by your browser and may use the browser vendor's speech service. Type instead if department policy does not allow that processing.</p>
 
       <div style="margin-top:14px;">
         <label for="narrative">De-identified narrative</label>
-        <textarea id="narrative" maxlength="4000" aria-describedby="narrative-help" placeholder="Example: Dispatched at 23:47 for a reported kitchen fire at a two-story residence. Engine 41 arrived at 23:53 with four personnel. Light smoke was visible from the rear. The crew advanced an attack line, completed a primary search, and controlled the fire at 23:58. No injuries were reported."></textarea>
+        <textarea id="narrative" maxlength="4000" aria-describedby="narrative-help" placeholder="Unavailable while official-source review is in progress." disabled></textarea>
         <div class="hint" id="narrative-help">⌘/Ctrl + Enter to submit · maximum 4000 characters</div>
       </div>
 
       <div class="row" style="margin-top:18px;">
-        <button class="primary" id="submitBtn" type="button">Prepare review aid</button>
+        <button class="primary" id="submitBtn" type="button" disabled>Unavailable during source review</button>
         <span class="hint" id="submitStatus" role="status" aria-live="polite" style="display:none;"></span>
       </div>
 
@@ -205,8 +205,8 @@ a:hover{color:#c4b5fd}
   </div>
 
   <footer>
-    <p>Built under the <a href="https://www.freshskyai.com/#hulec" target="_blank" rel="noopener">HULEC rule</a> — Human-centered · Unique · Legal · Efficient · Cheap. Part of <a href="https://firstresponder.freshskyai.com/" target="_blank" rel="noopener">Fresh Sky AI for First Responders</a> · Advanced $29.99/month, no long-term contract.</p>
-    <p><a href="https://www.usfa.fema.gov/nfirs/neris/" target="_blank" rel="noopener">Official USFA NERIS information</a> · <a href="https://www.usfa.fema.gov/nfirs/sunset/" target="_blank" rel="noopener">Official NFIRS sunset dates</a></p>
+    <p>Built under the <a href="https://www.freshskyai.com/#hulec" target="_blank" rel="noopener">HULEC rule</a> — Human-centered · Unique · Legal · Efficient · Cheap. Part of <a href="https://firstresponder.freshskyai.com/" target="_blank" rel="noopener">Fresh Sky AI for First Responders</a> · Civic $14.99/month, with no long-term contract or automatic overage charges.</p>
+    <p><a href="https://www.usfa.fema.gov/neris/" target="_blank" rel="noopener">Current USFA NERIS page</a> · <a href="https://www.usfa.fema.gov/data-insights/nfirs/data/" target="_blank" rel="noopener">NFIRS data archive page</a></p>
     <p>This independent tool is not affiliated with USFA, FEMA, NERIS, or any state fire agency.</p>
       <p style="margin-top:8px;font-size:11.5px;"><a href="/privacy" style="color:#94a3b8;text-decoration:underline;">Privacy</a> · <a href="/terms" style="color:#94a3b8;text-decoration:underline;">Terms</a> · <a href="https://www.freshskyai.com/contact" target="_blank" rel="noopener" style="color:#94a3b8;text-decoration:underline;">Contact</a></p>
   </footer>

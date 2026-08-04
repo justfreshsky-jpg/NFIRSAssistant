@@ -1,10 +1,10 @@
 """FreshSkyAI NERIS Preparation Assistant.
 
-The legacy NFIRS drafting feature is retired. Starting January 1, 2026,
-calendar-year 2026 incident submission is exclusively in NERIS, and NFIRS
-became unavailable in February 2026. This app now turns a de-identified
-after-call narrative into a plain-language review aid for a human completing
-the department's authorized NERIS or RMS workflow.
+The legacy NFIRS drafting feature is retired. The preparation feature remains
+held while changed USFA NERIS and NFIRS archive pages receive substantive
+human review. When source-approved, the app turns a de-identified after-call
+narrative into a plain-language review aid for a human completing the
+department's authorized NERIS or RMS workflow.
 
 The app never submits an incident, assigns NFIRS or NERIS codes, or claims
 schema compliance. It instructs users not to submit exact addresses, personal
@@ -60,9 +60,16 @@ install_security_headers(app)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("neris_preparation")
 
-USFA_NFIRS_SUNSET_URL = "https://www.usfa.fema.gov/nfirs/sunset/"
-USFA_NERIS_URL = "https://www.usfa.fema.gov/nfirs/neris/"
-USFA_NERIS_ABOUT_URL = "https://www.usfa.fema.gov/nfirs/neris/about-neris/"
+USFA_NERIS_URL = "https://www.usfa.fema.gov/neris/"
+USFA_NFIRS_ARCHIVE_URL = "https://www.usfa.fema.gov/data-insights/nfirs/data/"
+SOURCE_REVIEW_STATE = "changed_pending_review"
+SOURCE_REVIEW_IDS = ("usfa-neris", "usfa-nfirs-archive")
+
+
+def _source_review_ready() -> bool:
+    """Require a reviewed source-code change before re-enabling preparation."""
+
+    return SOURCE_REVIEW_STATE == "approved"
 
 _RESTRICTED_INPUT_PATTERNS = {
     "incident_identifier": re.compile(
@@ -389,7 +396,11 @@ def _enforce_restricted_input(narrative: str) -> None:
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        source_review_required=not _source_review_ready(),
+        source_review_ids=SOURCE_REVIEW_IDS,
+    )
 
 
 @app.route("/health")
@@ -398,6 +409,8 @@ def health():
         status="ok",
         product="neris-preparation",
         nfirs_generation="disabled",
+        source_review=SOURCE_REVIEW_STATE,
+        preparation_available=_source_review_ready(),
     )
 
 
@@ -420,12 +433,12 @@ def retired_nfirs_draft():
     return (
         jsonify(
             error=(
-                "NFIRS draft generation is retired. Calendar-year 2026 incident "
-                "submission is exclusively in NERIS. Use the de-identified "
-                "preparation endpoint instead."
+                "NFIRS draft generation is retired. Current transition claims "
+                "are held for substantive official-source review."
             ),
-            replacement="/api/prepare",
-            official_source=USFA_NFIRS_SUNSET_URL,
+            code="official_source_review_required",
+            replacement=("/api/prepare" if _source_review_ready() else None),
+            official_sources=[USFA_NERIS_URL, USFA_NFIRS_ARCHIVE_URL],
         ),
         410,
     )
@@ -434,6 +447,19 @@ def retired_nfirs_draft():
 @app.route("/api/prepare", methods=["POST"])
 @_route_handler
 def prepare():
+    if not _source_review_ready():
+        return (
+            jsonify(
+                error=(
+                    "Preparation is temporarily unavailable while changed "
+                    "official NERIS and NFIRS sources receive substantive "
+                    "human review. No AI provider was called."
+                ),
+                code="official_source_review_required",
+                source_ids=list(SOURCE_REVIEW_IDS),
+            ),
+            503,
+        )
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify(error="Send a JSON object with a narrative."), 400
@@ -490,8 +516,7 @@ def prepare():
         ),
         official_sources=[
             USFA_NERIS_URL,
-            USFA_NERIS_ABOUT_URL,
-            USFA_NFIRS_SUNSET_URL,
+            USFA_NFIRS_ARCHIVE_URL,
         ],
     )
 
@@ -531,8 +556,8 @@ _TERMS_HTML = f"""<!DOCTYPE html>
 <p><em>Last updated 2026-07-16</em></p>
 <h2>Experimental preparation aid</h2>
 <p>This paid tool organizes a de-identified after-call narrative for human review. It is not a NERIS form, schema mapping, import file, compliance check, filing service, or official incident report.</p>
-<h2>NFIRS is retired</h2>
-<p>The tool does not generate NFIRS reports or codes. USFA states that calendar-year 2026 incident submission is exclusively in NERIS, NFIRS edits ended January 31, 2026, and NFIRS became unavailable in February 2026. See the <a href="{USFA_NFIRS_SUNSET_URL}">official transition notice</a>.</p>
+<h2>Official-source review hold</h2>
+<p>The tool does not generate NFIRS reports or codes. NERIS transition and NFIRS archive claims are temporarily withheld because the official pages changed from their approved snapshots. See the current <a href="{USFA_NERIS_URL}">USFA NERIS page</a> and <a href="{USFA_NFIRS_ARCHIVE_URL}">NFIRS data archive page</a>; do not rely on this site for transition dates or status until review is complete.</p>
 <h2>Human verification required</h2>
 <p>AI output may be incomplete or wrong. An authorized human must verify every item against source records, the current NERIS or RMS interface, department policy, and applicable law before using it.</p>
 <h2>Prohibited input</h2>
