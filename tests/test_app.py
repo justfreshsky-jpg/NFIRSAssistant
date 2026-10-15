@@ -294,3 +294,11 @@ def test_privacy_and_terms_match_current_product(client):
     assert "does not generate NFIRS reports or codes" in terms
     assert "NERIS transition and NFIRS archive claims are temporarily withheld" in terms
     assert application.USFA_NFIRS_ARCHIVE_URL in terms
+
+
+# Existing tests supply synthetic model responses; account eligibility is explicit.
+import pytest as _free_policy_pytest
+@_free_policy_pytest.fixture(autouse=True)
+def _verified_free_test_context(monkeypatch):
+    import app as _test_app
+    monkeypatch.setattr(_test_app, '_ai_availability', lambda: {'available': True})
